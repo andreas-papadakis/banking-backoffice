@@ -1,4 +1,4 @@
-package io.github.andreaspapadakis.banking.backoffice.exception;
+package io.github.andreaspapadakis.banking.backoffice.shared.exception;
 
 import io.github.andreaspapadakis.banking.backoffice.accounts.exception.RussianRouletteException;
 import java.time.LocalDateTime;
