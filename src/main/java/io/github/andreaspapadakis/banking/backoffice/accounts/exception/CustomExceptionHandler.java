@@ -1,6 +1,6 @@
-package io.github.andreaspapadakis.banking.backoffice.shared.exception;
+package io.github.andreaspapadakis.banking.backoffice.accounts.exception;
 
-import io.github.andreaspapadakis.banking.backoffice.accounts.exception.RussianRouletteException;
+import io.github.andreaspapadakis.banking.backoffice.shared.exception.ApiException;
 import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 import org.apache.logging.log4j.LogManager;
