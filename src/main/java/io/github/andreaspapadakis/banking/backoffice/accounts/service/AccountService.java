@@ -5,11 +5,9 @@ import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountRespons
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
-import org.springframework.transaction.annotation.Transactional;
 
 public interface AccountService {
 
-  @Transactional
   AccountResponseDto save(AccountRequestDto accountRequestDto);
 
   List<AccountResponseDto> getAll();

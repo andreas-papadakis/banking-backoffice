@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -33,7 +34,10 @@ public class AccountController {
   @PostMapping
   public ResponseEntity<AccountResponseDto> save(@RequestBody AccountRequestDto accountRequestDto) {
     AccountResponseDto responseBody = accountService.save(accountRequestDto);
-    URI location = URI.create("/api/accounts/" + responseBody.id());
+    URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+        .path("/{id}")
+        .buildAndExpand(responseBody.id())
+        .toUri();
 
     return ResponseEntity.created(location).body(responseBody);
   }
