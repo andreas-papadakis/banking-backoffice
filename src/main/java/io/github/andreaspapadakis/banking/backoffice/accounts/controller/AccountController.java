@@ -4,6 +4,7 @@ import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountRequest
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponseDto;
 import io.github.andreaspapadakis.banking.backoffice.accounts.service.AccountService;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("/api/accounts")
 public class AccountController {
 
   private final AccountService accountService;
@@ -32,8 +33,9 @@ public class AccountController {
   @PostMapping
   public ResponseEntity<AccountResponseDto> save(@RequestBody AccountRequestDto accountRequestDto) {
     AccountResponseDto responseBody = accountService.save(accountRequestDto);
+    URI location = URI.create("/api/accounts/" + responseBody.id());
 
-    return new ResponseEntity<>(responseBody, HttpStatus.CREATED);
+    return ResponseEntity.created(location).body(responseBody);
   }
 
   @GetMapping
@@ -58,10 +60,10 @@ public class AccountController {
     return new ResponseEntity<>(responseBody, HttpStatus.OK);
   }
 
-  @PatchMapping
-  public ResponseEntity<AccountResponseDto> update(
+  @PatchMapping("/{id}")
+  public ResponseEntity<AccountResponseDto> update( @PathVariable String id,
       @RequestBody AccountRequestDto accountRequestDto) {
-    AccountResponseDto responseBody = accountService.update(accountRequestDto);
+    AccountResponseDto responseBody = accountService.update(id, accountRequestDto);
 
     return new ResponseEntity<>(responseBody, HttpStatus.ACCEPTED);
   }

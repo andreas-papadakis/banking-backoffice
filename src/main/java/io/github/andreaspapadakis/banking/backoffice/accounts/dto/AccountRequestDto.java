@@ -1,5 +1,4 @@
 package io.github.andreaspapadakis.banking.backoffice.accounts.dto;
 
-public record AccountRequestDto(String id,
-                                Double balance,
+public record AccountRequestDto(Double balance,
                                 String currency) {}

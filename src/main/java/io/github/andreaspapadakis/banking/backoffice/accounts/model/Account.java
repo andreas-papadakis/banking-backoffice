@@ -31,6 +31,7 @@ public class Account {
   @Column(length = 3)
   private String currency;
 
+  @Column(updatable = false)
   @Temporal(TemporalType.TIMESTAMP)
   private Date createdAt;
 

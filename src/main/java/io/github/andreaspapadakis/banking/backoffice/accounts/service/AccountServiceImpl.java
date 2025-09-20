@@ -21,17 +21,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class AccountServiceImpl implements AccountService {
 
-  private static final AccountMapper accountMapper = AccountMapper.INSTANCE;
+  private final AccountMapper accountMapper;
   private final AccountRepository accountRepository;
   private final RandomNumberGeneratorProperty randomNumberGeneratorProperty;
 
-  public AccountServiceImpl(AccountRepository accountRepository,
+  public AccountServiceImpl(AccountMapper accountMapper,
+                            AccountRepository accountRepository,
                             ApplicationProperties appProperties) {
+    this.accountMapper = accountMapper;
     this.accountRepository = accountRepository;
     this.randomNumberGeneratorProperty = appProperties.randomNumberGeneratorProperty();
   }
@@ -48,6 +53,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<AccountResponseDto> getAll() {
     List<AccountResponseDto> accountResponseDtos = new ArrayList<>();
 
@@ -58,33 +64,45 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public AccountResponseDto getAccountById(String id) {
     return accountMapper.mapAllData(accountRepository.findById(id).orElseThrow());
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<AccountResponseDto> getAccountsByCurrency(String currency) {
-    List<AccountResponseDto> accountResponseDtos = new ArrayList<>();
+    List<Account> accountsByCurrency = accountRepository.findByCurrency(currency);
 
-    accountRepository.findByCurrency(currency).orElseThrow()
-        .forEach(account -> accountResponseDtos.add(accountMapper.mapAllData(account)));
+    if (accountsByCurrency.isEmpty()) {
+      throw new NoSuchElementException("There are no accounts with provided currency");
+    }
 
-    return accountResponseDtos;
+    return accountsByCurrency.stream()
+        .map(accountMapper::mapAllData)
+        .collect(Collectors.toList());
   }
 
   @Override
-  public AccountResponseDto update(AccountRequestDto accountRequestDto) {
-    Account existingAccount = accountRepository.findById(accountRequestDto.id()).orElseThrow();
+  public AccountResponseDto update(String id, AccountRequestDto accountRequestDto) {
+    Account existingAccount = accountRepository.findById(id).orElseThrow();
+    boolean update = false;
 
-    if (accountRequestDto.balance() != null) {
+    if (accountRequestDto.balance() != null
+        && !accountRequestDto.balance().equals(existingAccount.getBalance())) {
       existingAccount.setBalance(accountRequestDto.balance());
+      update = true;
     }
 
-    if (accountRequestDto.currency() != null) {
+    if (accountRequestDto.currency() != null
+        && !accountRequestDto.currency().equals(existingAccount.getCurrency())) {
       existingAccount.setCurrency(accountRequestDto.currency());
+      update = true;
     }
 
-    return accountMapper.mapAllData(accountRepository.save(existingAccount));
+    return accountMapper.mapAllData(update
+        ? accountRepository.save(existingAccount)
+        : existingAccount);
   }
 
   @Override
@@ -103,20 +121,20 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public List<AccountResponseDto> clearDebts() {
-    List<Account> accountsWithDebts = accountRepository.findAccountsInDebt()
-        .orElseThrow(() -> new NoSuchElementException("There are no accounts in debt"));
+    List<Account> accountsWithDebts = accountRepository.findAccountsInDebt();
+
+    if (accountsWithDebts.isEmpty()) {
+      throw new NoSuchElementException("There are no accounts in debt");
+    }
 
     accountsWithDebts.forEach(account -> {
       account.setBalance(0.0);
       accountRepository.save(account);
     });
 
-    List<AccountResponseDto> accountsWithClearedDebts = new ArrayList<>();
-
-    accountsWithDebts.forEach(
-        account -> accountsWithClearedDebts.add(accountMapper.mapWithoutId(account)));
-
-    return accountsWithClearedDebts;
+    return accountsWithDebts.stream()
+        .map(accountMapper::mapAllData)
+        .collect(Collectors.toList());
   }
 
   @Override
