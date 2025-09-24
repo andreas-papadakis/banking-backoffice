@@ -26,7 +26,7 @@ public class Account {
   private String id;
 
   @Column(nullable = false)
-  private Double balance;
+  private double balance;
 
   @Column(length = 3)
   private String currency;

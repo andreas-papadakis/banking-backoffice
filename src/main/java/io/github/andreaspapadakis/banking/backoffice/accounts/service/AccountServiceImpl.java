@@ -2,14 +2,15 @@ package io.github.andreaspapadakis.banking.backoffice.accounts.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountRequestDto;
+import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponseDto;
+import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.exception.RussianRouletteException;
 import io.github.andreaspapadakis.banking.backoffice.accounts.mapper.AccountMapper;
 import io.github.andreaspapadakis.banking.backoffice.accounts.model.Account;
 import io.github.andreaspapadakis.banking.backoffice.accounts.repository.AccountRepository;
-import io.github.andreaspapadakis.banking.backoffice.shared.config.ApplicationProperties;
 import io.github.andreaspapadakis.banking.backoffice.shared.config.RandomNumberGeneratorProperty;
+import io.github.andreaspapadakis.banking.backoffice.shared.utils.StringUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,27 +23,21 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
   private final AccountMapper accountMapper;
   private final AccountRepository accountRepository;
   private final RandomNumberGeneratorProperty randomNumberGeneratorProperty;
 
-  public AccountServiceImpl(AccountMapper accountMapper,
-                            AccountRepository accountRepository,
-                            ApplicationProperties appProperties) {
-    this.accountMapper = accountMapper;
-    this.accountRepository = accountRepository;
-    this.randomNumberGeneratorProperty = appProperties.randomNumberGeneratorProperty();
-  }
-
   @Override
-  public AccountResponseDto save(AccountRequestDto accountRequestDto) {
+  public AccountResponseDto save(AccountCreateRequest accountRequestDto) {
     Account account = new Account();
 
     account.setId(UUID.randomUUID().toString());
@@ -65,7 +60,7 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   @Transactional(readOnly = true)
-  public AccountResponseDto getAccountById(String id) {
+  public AccountResponseDto getAccountById(UUID id) {
     return accountMapper.mapAllData(accountRepository.findById(id).orElseThrow());
   }
 
@@ -84,29 +79,24 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public AccountResponseDto update(String id, AccountRequestDto accountRequestDto) {
-    Account existingAccount = accountRepository.findById(id).orElseThrow();
-    boolean update = false;
+  public AccountResponseDto update(UUID id, AccountUpdateRequest accountUpdateRequest) {
+    Account account = accountRepository.findById(id).orElseThrow();
+    Double newBalance = accountUpdateRequest.balance();
+    String newCurrency = accountUpdateRequest.currency();
 
-    if (accountRequestDto.balance() != null
-        && !accountRequestDto.balance().equals(existingAccount.getBalance())) {
-      existingAccount.setBalance(accountRequestDto.balance());
-      update = true;
+    if (newBalance != null && !newBalance.equals(account.getBalance())) {
+      account.setBalance(accountUpdateRequest.balance());
     }
 
-    if (accountRequestDto.currency() != null
-        && !accountRequestDto.currency().equals(existingAccount.getCurrency())) {
-      existingAccount.setCurrency(accountRequestDto.currency());
-      update = true;
+    if (!StringUtils.isNullOrEmpty(newCurrency) && !newCurrency.equals(account.getCurrency())) {
+      account.setCurrency(accountUpdateRequest.currency());
     }
 
-    return accountMapper.mapAllData(update
-        ? accountRepository.save(existingAccount)
-        : existingAccount);
+    return accountMapper.mapAllData(accountRepository.save(account));
   }
 
   @Override
-  public void deleteById(String id) {
+  public void deleteById(UUID id) {
     if (!accountRepository.existsById(id)) {
       throw new NoSuchElementException("There is no account with provided ID");
     }
@@ -138,7 +128,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public Object russianRoulette(String loggedInId) throws IOException, URISyntaxException {
+  public Object russianRoulette(UUID loggedInId) throws IOException, URISyntaxException {
     Account loggedInAccount = accountRepository.findById(loggedInId).orElseThrow();
 
     if (loggedInAccount.getBalance() < 100000) {
