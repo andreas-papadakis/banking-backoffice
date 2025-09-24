@@ -1,6 +1,6 @@
-package io.github.andreaspapadakis.banking.backoffice.accounts.validation;
+package io.github.andreaspapadakis.banking.backoffice.shared.validation;
 
-import io.github.andreaspapadakis.banking.backoffice.accounts.validator.AllowedCurrencyValidator;
+import io.github.andreaspapadakis.banking.backoffice.accounts.validator.AtLeastOneAccountFieldPresentValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
@@ -10,12 +10,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Constraint(validatedBy = AllowedCurrencyValidator.class)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Constraint(validatedBy = AtLeastOneAccountFieldPresentValidator.class)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface AllowedCurrency {
+public @interface AtLeastOneFieldPresent {
 
-  String message() default "{currencyNotSupportedErrorMessage}";
+  String message() default "{atLeastOneFieldRequiredErrorMessage}";
   Class<?>[] groups() default {};
   Class<? extends Payload>[] payload() default {};
 

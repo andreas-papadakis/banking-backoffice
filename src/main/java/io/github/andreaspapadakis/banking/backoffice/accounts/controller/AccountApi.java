@@ -3,7 +3,7 @@ package io.github.andreaspapadakis.banking.backoffice.accounts.controller;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponseDto;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
-import io.github.andreaspapadakis.banking.backoffice.accounts.validation.AllowedCurrency;
+import io.github.andreaspapadakis.banking.backoffice.shared.validation.AllowedCurrency;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import java.io.IOException;

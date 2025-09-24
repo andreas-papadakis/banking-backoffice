@@ -1,6 +1,6 @@
 package io.github.andreaspapadakis.banking.backoffice.accounts.dto;
 
-import io.github.andreaspapadakis.banking.backoffice.accounts.validation.AllowedCurrency;
+import io.github.andreaspapadakis.banking.backoffice.shared.validation.AllowedCurrency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
