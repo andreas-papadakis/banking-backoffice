@@ -1,12 +1,15 @@
 package io.github.andreaspapadakis.banking.backoffice.accounts.controller;
 
-import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountRequestDto;
+import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponseDto;
+import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.service.AccountService;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,24 +19,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/accounts")
-public class AccountController {
-
+@RequiredArgsConstructor
+public class AccountController implements AccountApi {
   private final AccountService accountService;
 
-  public AccountController(AccountService accountService) {
-    this.accountService = accountService;
-  }
-
+  @Override
   @PostMapping
-  public ResponseEntity<AccountResponseDto> save(@RequestBody AccountRequestDto accountRequestDto) {
-    AccountResponseDto responseBody = accountService.save(accountRequestDto);
+  public ResponseEntity<AccountResponseDto> save(@RequestBody
+                                                 AccountCreateRequest accountCreateRequest) {
+    AccountResponseDto responseBody = accountService.save(accountCreateRequest);
     URI location = ServletUriComponentsBuilder.fromCurrentRequest()
         .path("/{id}")
         .buildAndExpand(responseBody.id())
@@ -42,6 +41,7 @@ public class AccountController {
     return ResponseEntity.created(location).body(responseBody);
   }
 
+  @Override
   @GetMapping
   public ResponseEntity<List<AccountResponseDto>> getAllAccounts() {
     List<AccountResponseDto> responseBody = accountService.getAll();
@@ -49,36 +49,42 @@ public class AccountController {
     return new ResponseEntity<>(responseBody, HttpStatus.OK);
   }
 
+  @Override
   @GetMapping(value = "/{id}")
-  public ResponseEntity<AccountResponseDto> getAccountById(@PathVariable String id) {
+  public ResponseEntity<AccountResponseDto> getAccountById(@PathVariable
+                                                           UUID id) {
     AccountResponseDto responseBody = accountService.getAccountById(id);
 
     return new ResponseEntity<>(responseBody, HttpStatus.OK);
   }
 
+  @Override
   @GetMapping(params = "currency")
-  public ResponseEntity<List<AccountResponseDto>> getAccountsByCurrency(
-      @RequestParam String currency) {
+  public ResponseEntity<List<AccountResponseDto>> getAccountsByCurrency(String currency) {
     List<AccountResponseDto> responseBody = accountService.getAccountsByCurrency(currency);
 
     return new ResponseEntity<>(responseBody, HttpStatus.OK);
   }
 
+  @Override
   @PatchMapping("/{id}")
-  public ResponseEntity<AccountResponseDto> update( @PathVariable String id,
-      @RequestBody AccountRequestDto accountRequestDto) {
-    AccountResponseDto responseBody = accountService.update(id, accountRequestDto);
+  public ResponseEntity<AccountResponseDto> update(@PathVariable UUID id,
+                                                   @RequestBody
+                                                   AccountUpdateRequest accountUpdateRequest) {
+    AccountResponseDto responseBody = accountService.update(id, accountUpdateRequest);
 
     return new ResponseEntity<>(responseBody, HttpStatus.ACCEPTED);
   }
 
+  @Override
   @DeleteMapping(value = "/{id}")
-  public ResponseEntity<Void> deleteById(@PathVariable String id) {
+  public ResponseEntity<Void> deleteById(@PathVariable UUID id) {
     accountService.deleteById(id);
 
     return ResponseEntity.noContent().build();
   }
 
+  @Override
   @DeleteMapping
   public ResponseEntity<Void> deleteAll() {
     accountService.deleteAll();
@@ -87,6 +93,7 @@ public class AccountController {
   }
 
   // for fun
+  @Override
   @GetMapping(value = "xarizeiToMagazi")
   public ResponseEntity<List<AccountResponseDto>> clearDebts() {
     List<AccountResponseDto> responseBody = accountService.clearDebts();
@@ -94,10 +101,11 @@ public class AccountController {
     return new ResponseEntity<>(responseBody, HttpStatus.ACCEPTED);
   }
 
-  @RequestMapping(method = RequestMethod.POST, value = "/russianRoulette/{loggedInId}")
-  public ResponseEntity<Object> russianRoulette(@PathVariable String loggedInId)
+  @Override
+  @PostMapping(value = "/russianRoulette/{loggedInId}")
+  public ResponseEntity<Object> russianRoulette(@PathVariable UUID id)
       throws IOException, URISyntaxException {
-    Object responseBody = accountService.russianRoulette(loggedInId);
+    Object responseBody = accountService.russianRoulette(id);
 
     if (responseBody instanceof String) {
       return new ResponseEntity<>(responseBody, HttpStatus.GONE);
