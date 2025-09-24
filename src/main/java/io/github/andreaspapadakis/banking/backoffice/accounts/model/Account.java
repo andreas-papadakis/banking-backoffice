@@ -8,6 +8,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.util.Date;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,7 @@ public class Account {
 
   @Id
   @Column(length = 36)
-  private String id;
+  private UUID id;
 
   @Column(nullable = false)
   private double balance;

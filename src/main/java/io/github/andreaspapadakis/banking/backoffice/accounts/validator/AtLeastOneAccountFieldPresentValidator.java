@@ -15,6 +15,6 @@ public class AtLeastOneAccountFieldPresentValidator extends
     }
 
     return accountUpdateRequest.balance() != null
-        || !StringUtils.isNullOrEmpty(accountUpdateRequest.currency());
+        || !StringUtils.isNullOrBlank(accountUpdateRequest.currency());
   }
 }

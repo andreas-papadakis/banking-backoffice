@@ -1,6 +1,7 @@
 package io.github.andreaspapadakis.banking.backoffice.accounts.exception;
 
 import io.github.andreaspapadakis.banking.backoffice.shared.exception.ApiException;
+import io.github.andreaspapadakis.banking.backoffice.shared.utils.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -80,14 +81,17 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
 
     log.error("[{}]:[{}]", handlerMethod, logMessage);
 
-    String errorMessage = globalErrors
-        .stream()
+    String globalErrorsMessage = globalErrors.stream()
         .map(DefaultMessageSourceResolvable::getDefaultMessage)
-        .collect(Collectors.joining(", "))
-        .concat(fieldErrors
-            .stream()
-            .map(DefaultMessageSourceResolvable::getDefaultMessage)
-            .collect(Collectors.joining(", ")));
+        .collect(Collectors.joining(", "));
+
+    String fieldErrorsMessage = fieldErrors.stream()
+        .map(DefaultMessageSourceResolvable::getDefaultMessage)
+        .collect(Collectors.joining(", "));
+
+    String errorMessage = Stream.of(globalErrorsMessage, fieldErrorsMessage)
+        .filter(message -> !StringUtils.isNullOrBlank(message))
+        .collect(Collectors.joining(", "));
 
     return ResponseEntity.badRequest().body(new ApiException(errorMessage, LocalDateTime.now()));
   }

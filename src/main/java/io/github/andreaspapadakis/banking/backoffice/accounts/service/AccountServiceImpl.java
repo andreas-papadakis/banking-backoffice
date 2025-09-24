@@ -40,7 +40,7 @@ public class AccountServiceImpl implements AccountService {
   public AccountResponseDto save(AccountCreateRequest accountRequestDto) {
     Account account = new Account();
 
-    account.setId(UUID.randomUUID().toString());
+    account.setId(UUID.randomUUID());
     account.setBalance(0.0d);
     account.setCurrency(accountRequestDto.currency());
 
@@ -88,7 +88,7 @@ public class AccountServiceImpl implements AccountService {
       account.setBalance(accountUpdateRequest.balance());
     }
 
-    if (!StringUtils.isNullOrEmpty(newCurrency) && !newCurrency.equals(account.getCurrency())) {
+    if (!StringUtils.isNullOrBlank(newCurrency) && !newCurrency.equals(account.getCurrency())) {
       account.setCurrency(accountUpdateRequest.currency());
     }
 
