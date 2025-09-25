@@ -5,10 +5,11 @@ import io.github.andreaspapadakis.banking.backoffice.shared.validation.AllowedCu
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Currency;
+import org.jspecify.annotations.Nullable;
 
 public class AllowedCurrencyValidator implements ConstraintValidator<AllowedCurrency, String> {
   @Override
-  public boolean isValid(String currency, ConstraintValidatorContext context) {
+  public boolean isValid(@Nullable String currency, ConstraintValidatorContext context) {
     if (StringUtils.isNullOrBlank(currency)) {
       return true; // @NotBlank should handle null/empty
     }

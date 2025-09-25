@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -36,16 +37,14 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(value = NoSuchElementException.class)
   public ResponseEntity<Object> handleNoSuchElementException(NoSuchElementException ex) {
-    return new ResponseEntity<>(new ApiException(ex.getMessage(),
-            LocalDateTime.now()),
-            HttpStatus.NOT_FOUND);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(new ApiException(ex.getMessage(), LocalDateTime.now()));
   }
 
   @ExceptionHandler(value = RussianRouletteException.class)
   public ResponseEntity<Object> handleRussianRouletteException(RussianRouletteException ex) {
-    return new ResponseEntity<>(new ApiException(ex.getMessage(),
-            LocalDateTime.now()),
-            HttpStatus.FORBIDDEN);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(new ApiException(ex.getMessage(), LocalDateTime.now()));
   }
 
   @ExceptionHandler(value = MethodArgumentTypeMismatchException.class)
@@ -55,14 +54,13 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
     String requiredTypeName = (ex.getRequiredType() != null)
         ? ex.getRequiredType().getSimpleName()
         : "unknown";
+    Object exceptionValue = ex.getValue() != null ? ex.getValue() : "null";
     String errorMessage = messageSource.getMessage("defaultMethodArgumentTypeMismatchErrorMessage",
-        new Object[]{ex.getName(), ex.getValue(), requiredTypeName},
+        new Object[]{ex.getName(), exceptionValue, requiredTypeName},
         null);
     ApiException exception = new ApiException(errorMessage, LocalDateTime.now());
 
-    return ResponseEntity
-        .badRequest()
-        .body(exception);
+    return ResponseEntity.badRequest().body(exception);
   }
 
   @Override
@@ -170,5 +168,5 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
     );
   }
 
-  private record FieldErrorKey(String objectName, String field, Object rejectedValue) {}
+  private record FieldErrorKey(String objectName, String field, @Nullable Object rejectedValue) {}
 }

@@ -1,7 +1,7 @@
 package io.github.andreaspapadakis.banking.backoffice.accounts.service;
 
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateRequest;
-import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponseDto;
+import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponse;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
 import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
@@ -14,29 +14,27 @@ import org.springframework.validation.annotation.Validated;
 public interface AccountService {
 
   @NotNull
-  AccountResponseDto save(AccountCreateRequest accountRequestDto);
+  AccountResponse save(AccountCreateRequest accountRequestDto);
 
   @NotNull
-  List<AccountResponseDto> getAll();
+  List<AccountResponse> getAll();
 
   @NotNull
-  AccountResponseDto getAccountById(UUID id);
+  AccountResponse getAccountById(UUID id);
 
   @NotNull
-  List<AccountResponseDto> getAccountsByCurrency(String currency);
+  List<AccountResponse> getAccountsByCurrency(String currency);
 
   @NotNull
-  AccountResponseDto update(UUID id, AccountUpdateRequest accountUpdateRequest);
+  AccountResponse update(UUID id, AccountUpdateRequest accountUpdateRequest);
 
-  @NotNull
   void deleteById(UUID id);
 
-  @NotNull
   void deleteAll();
 
   @NotNull
-  List<AccountResponseDto> clearDebts();
+  List<AccountResponse> clearDebts();
 
   @NotNull
-  Object russianRoulette(UUID loggedInId) throws IOException, URISyntaxException;
+  Object russianRoulette(UUID id) throws IOException, URISyntaxException;
 }

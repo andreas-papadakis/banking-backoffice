@@ -3,7 +3,7 @@ package io.github.andreaspapadakis.banking.backoffice.accounts.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateRequest;
-import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponseDto;
+import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponse;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.exception.RussianRouletteException;
 import io.github.andreaspapadakis.banking.backoffice.accounts.mapper.AccountMapper;
@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,38 +36,37 @@ public class AccountServiceImpl implements AccountService {
   private final AccountMapper accountMapper;
   private final AccountRepository accountRepository;
   private final RandomNumberGeneratorProperty randomNumberGeneratorProperty;
+  private final MessageSource messageSource;
 
   @Override
-  public AccountResponseDto save(AccountCreateRequest accountRequestDto) {
-    Account account = new Account();
+  public AccountResponse save(AccountCreateRequest accountRequestDto) {
+    Account account = accountMapper.fromAccountCreateRequest(accountRequestDto);
+    Account saved = accountRepository.save(account);
 
-    account.setId(UUID.randomUUID());
-    account.setBalance(0.0d);
-    account.setCurrency(accountRequestDto.currency());
-
-    return accountMapper.mapAllData(accountRepository.save(account));
+    return accountMapper.toAccountResponseWithAllData(saved);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<AccountResponseDto> getAll() {
-    List<AccountResponseDto> accountResponseDtos = new ArrayList<>();
+  public List<AccountResponse> getAll() {
+    List<AccountResponse> accountResponses = new ArrayList<>();
 
     accountRepository.findAll()
-        .forEach(account -> accountResponseDtos.add(accountMapper.mapAllData(account)));
+        .forEach(account ->
+            accountResponses.add(accountMapper.toAccountResponseWithAllData(account)));
 
-    return accountResponseDtos;
+    return accountResponses;
   }
 
   @Override
   @Transactional(readOnly = true)
-  public AccountResponseDto getAccountById(UUID id) {
-    return accountMapper.mapAllData(accountRepository.findById(id).orElseThrow());
+  public AccountResponse getAccountById(UUID id) {
+    return accountMapper.toAccountResponseWithAllData(accountRepository.findById(id).orElseThrow());
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<AccountResponseDto> getAccountsByCurrency(String currency) {
+  public List<AccountResponse> getAccountsByCurrency(String currency) {
     List<Account> accountsByCurrency = accountRepository.findByCurrency(currency);
 
     if (accountsByCurrency.isEmpty()) {
@@ -74,12 +74,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     return accountsByCurrency.stream()
-        .map(accountMapper::mapAllData)
+        .map(accountMapper::toAccountResponseWithAllData)
         .collect(Collectors.toList());
   }
 
   @Override
-  public AccountResponseDto update(UUID id, AccountUpdateRequest accountUpdateRequest) {
+  public AccountResponse update(UUID id, AccountUpdateRequest accountUpdateRequest) {
     Account account = accountRepository.findById(id).orElseThrow();
     Double newBalance = accountUpdateRequest.balance();
     String newCurrency = accountUpdateRequest.currency();
@@ -92,7 +92,7 @@ public class AccountServiceImpl implements AccountService {
       account.setCurrency(accountUpdateRequest.currency());
     }
 
-    return accountMapper.mapAllData(accountRepository.save(account));
+    return accountMapper.toAccountResponseWithAllData(accountRepository.save(account));
   }
 
   @Override
@@ -110,7 +110,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<AccountResponseDto> clearDebts() {
+  public List<AccountResponse> clearDebts() {
     List<Account> accountsWithDebts = accountRepository.findAccountsInDebt();
 
     if (accountsWithDebts.isEmpty()) {
@@ -123,16 +123,19 @@ public class AccountServiceImpl implements AccountService {
     });
 
     return accountsWithDebts.stream()
-        .map(accountMapper::mapAllData)
+        .map(accountMapper::toAccountResponseWithAllData)
         .collect(Collectors.toList());
   }
 
   @Override
-  public Object russianRoulette(UUID loggedInId) throws IOException, URISyntaxException {
-    Account loggedInAccount = accountRepository.findById(loggedInId).orElseThrow();
+  public Object russianRoulette(UUID id) throws IOException, URISyntaxException {
+    Account loggedInAccount = accountRepository.findById(id).orElseThrow();
 
     if (loggedInAccount.getBalance() < 100000) {
-      throw new RussianRouletteException("You are too weak to play russian roulette....");
+      String errorMessage = messageSource.getMessage("russianRouletteErrorMessage",
+          new Object[]{id},
+          null);
+      throw new RussianRouletteException(errorMessage);
     }
 
     int randomPick = getRandomInt(0, 5);
@@ -140,14 +143,16 @@ public class AccountServiceImpl implements AccountService {
 
     if (randomPick == 0) { // 1/6 probability to pass out; hehe
       if (bonusOrDeathPick <= 3) { // 3% probability to die; hehehehehe
-        accountRepository.deleteById(loggedInId);
+        accountRepository.deleteById(id);
 
-        return "RIP";
+        return messageSource.getMessage("russianRouletteRIPMessage",
+            new Object[]{},
+            null);
       }
 
       loggedInAccount.setBalance(0d);
 
-      return accountMapper.mapAllData(accountRepository.save(loggedInAccount));
+      return accountMapper.toAccountResponseWithAllData(accountRepository.save(loggedInAccount));
     } else if (bonusOrDeathPick < 2) {
       if (randomPick == 5) { // 1.5% probability to live happily :(
         loggedInAccount.setBalance(loggedInAccount.getBalance() * 1.5);
@@ -156,7 +161,7 @@ public class AccountServiceImpl implements AccountService {
         loggedInAccount.setCurrency("RMB"); // 1 euro == 0,13 RMB (chinese currency) ;)
       }
 
-      return accountMapper.mapAllData(accountRepository.save(loggedInAccount));
+      return accountMapper.toAccountResponseWithAllData(accountRepository.save(loggedInAccount));
     }
 
     return null;
