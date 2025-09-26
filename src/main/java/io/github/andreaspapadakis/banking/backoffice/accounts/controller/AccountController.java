@@ -4,6 +4,7 @@ import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateR
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponse;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.service.AccountService;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,7 +43,8 @@ public class AccountController implements AccountApi {
   }
 
   @Override
-  public AccountResponse getAccountById(@PathVariable UUID id) {
+  public AccountResponse getAccountById(@PathVariable UUID id, HttpServletRequest request) {
+    request.setAttribute("id", id.toString());
     return accountService.getAccountById(id);
   }
 
@@ -53,12 +55,15 @@ public class AccountController implements AccountApi {
 
   @Override
   public AccountResponse update(@PathVariable UUID id,
-                                @RequestBody AccountUpdateRequest accountUpdateRequest) {
+                                @RequestBody AccountUpdateRequest accountUpdateRequest,
+                                HttpServletRequest request) {
+    request.setAttribute("id", id.toString());
     return accountService.update(id, accountUpdateRequest);
   }
 
   @Override
-  public void deleteById(@PathVariable UUID id) {
+  public void deleteById(@PathVariable UUID id, HttpServletRequest request) {
+    request.setAttribute("id", id.toString());
     accountService.deleteById(id);
   }
 
@@ -74,8 +79,9 @@ public class AccountController implements AccountApi {
   }
 
   @Override
-  public ResponseEntity<Object> russianRoulette(@PathVariable UUID id)
+  public ResponseEntity<Object> russianRoulette(@PathVariable UUID id, HttpServletRequest request)
       throws IOException, URISyntaxException {
+    request.setAttribute("id", id.toString());
     Object responseBody = accountService.russianRoulette(id);
 
     if (responseBody instanceof String) {

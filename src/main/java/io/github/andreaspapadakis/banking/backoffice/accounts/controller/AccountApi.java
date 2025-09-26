@@ -4,6 +4,7 @@ import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateR
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponse;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
 import io.github.andreaspapadakis.banking.backoffice.shared.validation.AllowedCurrency;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import java.io.IOException;
@@ -32,7 +33,7 @@ public interface AccountApi {
 
   @ResponseStatus(HttpStatus.OK)
   @GetMapping(value = "/{id}")
-  AccountResponse getAccountById(UUID id);
+  AccountResponse getAccountById(UUID id, HttpServletRequest request);
 
   @ResponseStatus(HttpStatus.OK)
   @GetMapping(params = "currency")
@@ -45,11 +46,12 @@ public interface AccountApi {
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping("/{id}")
-  AccountResponse update(UUID id, @Valid AccountUpdateRequest accountUpdateRequest);
+  AccountResponse update(UUID id, @Valid AccountUpdateRequest accountUpdateRequest,
+                         HttpServletRequest request);
 
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping(value = "/{id}")
-  void deleteById(UUID id);
+  void deleteById(UUID id, HttpServletRequest request);
 
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping
@@ -61,5 +63,6 @@ public interface AccountApi {
   List<AccountResponse> clearDebts();
 
   @PostMapping(value = "/russianRoulette/{id}")
-  ResponseEntity<Object> russianRoulette(UUID id) throws IOException, URISyntaxException;
+  ResponseEntity<Object> russianRoulette(UUID id, HttpServletRequest request) throws IOException,
+      URISyntaxException;
 }
