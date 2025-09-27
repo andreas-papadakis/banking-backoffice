@@ -4,6 +4,7 @@ import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateR
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponse
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest
 import io.github.andreaspapadakis.banking.backoffice.accounts.service.AccountService
+import jakarta.servlet.http.HttpServletRequest
 import org.mockito.Mockito
 import org.springframework.http.HttpStatus
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
@@ -11,6 +12,7 @@ import org.springframework.web.util.UriComponents
 import org.springframework.web.util.UriComponentsBuilder
 import spock.lang.Specification
 import spock.lang.Subject
+import spock.lang.Unroll
 
 class AccountControllerSpecification extends Specification {
   private final AccountService accountService = Mock()
@@ -73,13 +75,17 @@ class AccountControllerSpecification extends Specification {
     given: "an ID"
     def id = UUID.randomUUID()
 
+    and: "a HttpServletRequest"
+    def request = Mock(HttpServletRequest)
+
     and: "a response from service"
     def accountResponse = new AccountResponse(id, 0.0d, "EUR", null)
 
     when:
-    def response = accountController.getAccountById(id)
+    def response = accountController.getAccountById(id, request)
 
     then:
+    1 * request.setAttribute("id", id.toString())
     1 * accountService.getAccountById(id) >> accountResponse
     response == accountResponse
   }
@@ -105,6 +111,9 @@ class AccountControllerSpecification extends Specification {
     given: "an ID"
     def id = UUID.randomUUID()
 
+    and: "a HttpServletRequest"
+    def request = Mock(HttpServletRequest)
+
     and: "an account update request"
     def accountUpdateRequest = new AccountUpdateRequest(1.0d, "EUR")
 
@@ -113,9 +122,10 @@ class AccountControllerSpecification extends Specification {
             accountUpdateRequest.currency(), null)
 
     when:
-    def response = accountController.update(id, accountUpdateRequest)
+    def response = accountController.update(id, accountUpdateRequest, request)
 
     then:
+    1 * request.setAttribute("id", id.toString())
     1 * accountService.update(id, accountUpdateRequest) >> accountResponse
     response == accountResponse
   }
@@ -124,10 +134,14 @@ class AccountControllerSpecification extends Specification {
     given: "an ID"
     def id = UUID.randomUUID()
 
+    and: "a HttpServletRequest"
+    def request = Mock(HttpServletRequest)
+
     when:
-    accountController.deleteById(id)
+    accountController.deleteById(id, request)
 
     then:
+    1 * request.setAttribute("id", id.toString())
     1 * accountService.deleteById(id)
   }
 
@@ -154,64 +168,25 @@ class AccountControllerSpecification extends Specification {
     response == accountResponseList
   }
 
-  def "test Russian Roulette - String response"() {
-    given: "an ID"
-    def id = UUID.randomUUID()
-
-    and: "a response from service"
-    def serviceResponse = "RIP"
+  @Unroll("Russian Roulette: when #scenario then expect #expectedStatus")
+  def "test Russian Roulette"() {
+    given: "a HttpServletRequest"
+    def request = Mock(HttpServletRequest)
 
     when:
-    def response = accountController.russianRoulette(id)
+    def response = accountController.russianRoulette(id, request)
 
     then:
+    1 * request.setAttribute("id", id.toString())
     1 * accountService.russianRoulette(id) >> serviceResponse
-    response.statusCode == HttpStatus.GONE
+    response.statusCode == expectedStatus
     response.body == serviceResponse
-  }
 
-  def "test Russian Roulette - AccountResponse response with 0 balance"() {
-    given: "an ID"
-    def id = UUID.randomUUID()
-
-    and: "a response from service"
-    def accountResponse = new AccountResponse(id, 0.0d, "EUR", null)
-
-    when:
-    def response = accountController.russianRoulette(id)
-
-    then:
-    1 * accountService.russianRoulette(id) >> accountResponse
-    response.statusCode == HttpStatus.RESET_CONTENT
-    response.body == accountResponse
-  }
-
-  def "test Russian Roulette - AccountResponseDTO response with balance > 0"() {
-    given: "an ID"
-    def id = UUID.randomUUID()
-
-    and: "a response from service"
-    def accountResponse = new AccountResponse(id, 1.0d, "EUR", null)
-
-    when:
-    def response = accountController.russianRoulette(id)
-
-    then:
-    1 * accountService.russianRoulette(id) >> accountResponse
-    response.statusCode == HttpStatus.ACCEPTED
-    response.body == accountResponse
-  }
-
-  def "test Russian Roulette - no response"() {
-    given: "an ID"
-    def id = UUID.randomUUID()
-
-    when:
-    def response = accountController.russianRoulette(id)
-
-    then:
-    1 * accountService.russianRoulette(id)
-    response.statusCode == HttpStatus.I_AM_A_TEAPOT
-    response.body == null
+    where:
+    scenario                           | id                | serviceResponse                            || expectedStatus
+    "String response"                  | UUID.randomUUID() | "RIP"                                      || HttpStatus.GONE
+    "account response with 0 balance"  | UUID.randomUUID() | new AccountResponse(id, 0.0d, "EUR", null) || HttpStatus.RESET_CONTENT
+    "account response with >0 balance" | UUID.randomUUID() | new AccountResponse(id, 1.0d, "EUR", null) || HttpStatus.ACCEPTED
+    "anything else"                    | UUID.randomUUID() | null                                       || HttpStatus.I_AM_A_TEAPOT
   }
 }
