@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountCreateRequest;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountResponse;
 import io.github.andreaspapadakis.banking.backoffice.accounts.dto.AccountUpdateRequest;
+import io.github.andreaspapadakis.banking.backoffice.accounts.exception.NoUpdatesException;
 import io.github.andreaspapadakis.banking.backoffice.accounts.exception.RussianRouletteException;
 import io.github.andreaspapadakis.banking.backoffice.accounts.mapper.AccountMapper;
 import io.github.andreaspapadakis.banking.backoffice.accounts.model.Account;
@@ -80,19 +81,33 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public AccountResponse update(UUID id, AccountUpdateRequest accountUpdateRequest) {
-    Account account = accountRepository.findById(id).orElseThrow();
+    Account existingAccount = accountRepository.findById(id).orElseThrow();
     Double newBalance = accountUpdateRequest.balance();
     String newCurrency = accountUpdateRequest.currency();
+    boolean hasUpdates = false;
+    Account updatedAccount = new Account();
+    updatedAccount.setId(existingAccount.getId());
 
-    if (newBalance != null && !newBalance.equals(account.getBalance())) {
-      account.setBalance(accountUpdateRequest.balance());
+    if (newBalance != null && !newBalance.equals(existingAccount.getBalance())) {
+      updatedAccount.setBalance(accountUpdateRequest.balance());
+      hasUpdates = true;
+    } else {
+      updatedAccount.setBalance(existingAccount.getBalance());
     }
 
-    if (!StringUtils.isNullOrBlank(newCurrency) && !newCurrency.equals(account.getCurrency())) {
-      account.setCurrency(accountUpdateRequest.currency());
+    if (!StringUtils.isNullOrBlank(newCurrency)
+        && !newCurrency.equals(existingAccount.getCurrency())) {
+      updatedAccount.setCurrency(accountUpdateRequest.currency());
+      hasUpdates = true;
+    } else {
+      updatedAccount.setCurrency(existingAccount.getCurrency());
     }
 
-    return accountMapper.toAccountResponseWithAllData(accountRepository.save(account));
+    if (!hasUpdates) {
+      throw new NoUpdatesException();
+    }
+
+    return accountMapper.toAccountResponseWithAllData(accountRepository.save(updatedAccount));
   }
 
   @Override
@@ -132,10 +147,7 @@ public class AccountServiceImpl implements AccountService {
     Account loggedInAccount = accountRepository.findById(id).orElseThrow();
 
     if (loggedInAccount.getBalance() < 100000) {
-      String errorMessage = messageSource.getMessage("russianRouletteErrorMessage",
-          new Object[]{id},
-          null);
-      throw new RussianRouletteException(errorMessage);
+      throw new RussianRouletteException();
     }
 
     int randomPick = getRandomInt(0, 5);

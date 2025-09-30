@@ -68,6 +68,27 @@ class CustomExceptionHandlerSpecification extends Specification {
     result == apiException
   }
 
+  def "test handleNoUpdatesException"() {
+    given: "an id"
+    def id = UUID.randomUUID().toString()
+
+    and: "a request"
+    def request = Mock(ServletWebRequest)
+    request.getAttribute("id", 0) >> id
+
+    and: "an expected ApiException"
+    def apiException = Mock(ApiException)
+
+    when:
+    def result = exceptionHandler.handleNoUpdatesException(request)
+
+    then:
+    1 * apiExceptionFactory.fromErrorCode(ErrorCode.NO_UPDATES, { Object[] args ->
+      args.length == 1 && args[0] == id
+    } as Object[]) >> apiException
+    result == apiException
+  }
+
   @Unroll("handleMethodArgumentTypeMismatchException: value=#value, requiredType=#requiredType should return #expectedValue and #expectedRequiredType")
   def "test handleMethodArgumentTypeMismatchException"() {
     given: "an exception"

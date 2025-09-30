@@ -55,6 +55,14 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
         Objects.requireNonNull(request.getAttribute("id", 0))});
   }
 
+  @ExceptionHandler(value = NoUpdatesException.class)
+  @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+  @ResponseBody
+  public ApiException handleNoUpdatesException(ServletWebRequest request) {
+    return apiExceptionFactory.fromErrorCode(ErrorCode.NO_UPDATES, new Object[]{
+        Objects.requireNonNull(request.getAttribute("id", 0))});
+  }
+
   @ExceptionHandler(value = MethodArgumentTypeMismatchException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ResponseBody
